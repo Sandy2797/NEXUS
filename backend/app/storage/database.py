@@ -1,12 +1,18 @@
-
 import json
+import os
 import sqlite3
 from pathlib import Path
 
 from backend.app.schemas.event import SecurityEvent
 
 
-DB_PATH = Path(__file__).resolve().parents[3] / "nexus.db"
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+_configured_db_path = os.getenv("NEXUS_DB_PATH", "nexus.db")
+DB_PATH = Path(_configured_db_path)
+
+if not DB_PATH.is_absolute():
+    DB_PATH = PROJECT_ROOT / DB_PATH
 
 
 def get_connection() -> sqlite3.Connection:
