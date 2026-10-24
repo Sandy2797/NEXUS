@@ -213,3 +213,39 @@ def test_negative_offset_is_rejected():
         )
 
     assert response.status_code == 422
+
+
+def test_event_can_be_created_and_retrieved(tmp_path, monkeypatch):
+    test_db = tmp_path / "integration_test.db"
+    monkeypatch.setattr(database, "DB_PATH", test_db)
+
+    with TestClient(main.app) as client:
+        create_response = client.post(
+            "/api/v1/events",
+            json={
+                "source": "wireless",
+                "finding_type": "suspicious_access_point",
+                "severity": "medium",
+                "asset_or_subject": "lab-ap-integration-test",
+                "summary": "Synthetic event for an integration test.",
+                "evidence_reference": "test-evidence-001",
+                "rule_or_model_version": "test-rules-1.0",
+            },
+        )
+
+        assert create_response.status_code == 201
+        created_event = create_response.json()
+        event_id = created_event["event_id"]
+
+        retrieve_response = client.get(
+            f"/api/v1/events/{event_id}"
+        )
+
+    assert retrieve_response.status_code == 200
+    retrieved_event = retrieve_response.json()
+
+    assert retrieved_event["event_id"] == event_id
+    assert retrieved_event["source"] == "wireless"
+    assert retrieved_event["finding_type"] == "suspicious_access_point"
+    assert retrieved_event["severity"] == "medium"
+    assert retrieved_event["evidence_reference"] == "test-evidence-001"
