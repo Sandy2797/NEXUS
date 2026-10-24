@@ -386,3 +386,14 @@ def test_filtered_event_total_counts_only_matching_events(
     assert len(data["items"]) == 1
     assert data["items"][0]["finding_type"] == "wireless_high"
     assert data["has_more"] is False
+
+
+def test_retrieve_nonexistent_event_returns_404(tmp_path, monkeypatch):
+    test_db = tmp_path / "missing_event_test.db"
+    monkeypatch.setattr(database, "DB_PATH", test_db)
+
+    with TestClient(main.app) as client:
+        response = client.get("/api/v1/events/nonexistent-event-id")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Event not found."
