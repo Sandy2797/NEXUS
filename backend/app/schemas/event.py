@@ -56,3 +56,11 @@ class SecurityEvent(BaseModel):
 
     policy_decision: PolicyDecision | None = None
     enforcement_result: EnforcementResult = "not_applicable"
+
+
+class EventPage(BaseModel):
+    items: list[SecurityEvent]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool

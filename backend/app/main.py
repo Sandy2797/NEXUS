@@ -4,7 +4,7 @@ import sqlite3
 
 from fastapi import FastAPI, HTTPException, Query, status
 
-from backend.app.schemas.event import SecurityEvent
+from backend.app.schemas.event import EventPage, SecurityEvent
 from backend.app.storage import database
 
 
@@ -48,7 +48,8 @@ def create_event(event: SecurityEvent):
 
 
 
-@app.get("/api/v1/events", response_model=list[SecurityEvent])
+
+@app.get("/api/v1/events", response_model=EventPage)
 def get_events(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -81,13 +82,25 @@ def get_events(
             detail=f"Invalid severity. Choose from: {sorted(valid_severities)}",
         )
 
-
-    return database.list_events(
+    items = database.list_events(
         limit=limit,
         offset=offset,
         source=source,
         severity=severity,
     )
+
+    total = database.count_events(
+        source=source,
+        severity=severity,
+    )
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": offset + len(items) < total,
+    }
 
 
 @app.get("/api/v1/events/{event_id}", response_model=SecurityEvent)

@@ -108,3 +108,27 @@ def list_events(
         for row in rows
     ]
 
+
+def count_events(
+    source: str | None = None,
+    severity: str | None = None,
+) -> int:
+    query = """
+        SELECT COUNT(*)
+        FROM security_events
+        WHERE 1 = 1
+    """
+    parameters: list[str] = []
+
+    if source is not None:
+        query += " AND source = ?"
+        parameters.append(source)
+
+    if severity is not None:
+        query += " AND severity = ?"
+        parameters.append(severity)
+
+    with get_connection() as connection:
+        result = connection.execute(query, parameters).fetchone()
+
+    return result[0]

@@ -48,7 +48,7 @@ def test_create_and_retrieve_event(tmp_path, monkeypatch):
         assert list_response.status_code == 200
         assert any(
             event["event_id"] == event_id
-            for event in list_response.json()
+            for event in list_response.json()["items"]
         )
 
 
@@ -122,10 +122,13 @@ def test_filter_events_by_source_and_severity(tmp_path, monkeypatch):
         )
 
     assert response.status_code == 200
-    results = response.json()
+    data = response.json()
+    results = data["items"]
+
     assert len(results) == 1
     assert results[0]["source"] == "wireless"
     assert results[0]["severity"] == "high"
+    assert data["total"] == 1
 
 
 def test_invalid_source_filter_is_rejected():
@@ -161,7 +164,7 @@ def test_event_limit_is_respected(tmp_path, monkeypatch):
         )
 
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    assert len(response.json()["items"]) == 1
 
 
 def test_event_pagination_returns_different_pages(tmp_path, monkeypatch):
@@ -196,11 +199,11 @@ def test_event_pagination_returns_different_pages(tmp_path, monkeypatch):
     first_page = first_response.json()
     second_page = second_response.json()
 
-    assert len(first_page) == 2
-    assert len(second_page) == 2
+    assert len(first_page["items"]) == 2
+    assert len(second_page["items"]) == 2
 
-    first_ids = {event["event_id"] for event in first_page}
-    second_ids = {event["event_id"] for event in second_page}
+    first_ids = {event["event_id"] for event in first_page["items"]}
+    second_ids = {event["event_id"] for event in second_page["items"]}
 
     assert first_ids.isdisjoint(second_ids)
 
@@ -249,3 +252,35 @@ def test_event_can_be_created_and_retrieved(tmp_path, monkeypatch):
     assert retrieved_event["finding_type"] == "suspicious_access_point"
     assert retrieved_event["severity"] == "medium"
     assert retrieved_event["evidence_reference"] == "test-evidence-001"
+
+
+def test_list_events_returns_pagination_metadata(tmp_path, monkeypatch):
+    test_db = tmp_path / "metadata_test.db"
+    monkeypatch.setattr(database, "DB_PATH", test_db)
+
+    with TestClient(main.app) as client:
+        for index in range(3):
+            response = client.post(
+                "/api/v1/events",
+                json={
+                    "source": "wireless",
+                    "finding_type": f"metadata_test_{index}",
+                    "severity": "low",
+                    "summary": f"Metadata test event {index}",
+                },
+            )
+            assert response.status_code == 201
+
+        response = client.get(
+            "/api/v1/events",
+            params={"limit": 2, "offset": 0},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data["items"]) == 2
+    assert data["total"] == 3
+    assert data["limit"] == 2
+    assert data["offset"] == 0
+    assert data["has_more"] is True
