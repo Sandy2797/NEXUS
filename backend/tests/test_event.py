@@ -284,3 +284,105 @@ def test_list_events_returns_pagination_metadata(tmp_path, monkeypatch):
     assert data["limit"] == 2
     assert data["offset"] == 0
     assert data["has_more"] is True
+
+
+def test_list_events_with_no_matches_returns_empty_page(tmp_path, monkeypatch):
+    test_db = tmp_path / "empty_page_test.db"
+    monkeypatch.setattr(database, "DB_PATH", test_db)
+
+    with TestClient(main.app) as client:
+        response = client.get("/api/v1/events")
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["items"] == []
+    assert data["total"] == 0
+    assert data["limit"] == 100
+    assert data["offset"] == 0
+    assert data["has_more"] is False
+
+
+def test_list_events_offset_beyond_end_returns_empty_page(
+    tmp_path, monkeypatch
+):
+    test_db = tmp_path / "offset_beyond_end_test.db"
+    monkeypatch.setattr(database, "DB_PATH", test_db)
+
+    with TestClient(main.app) as client:
+        for index in range(3):
+            response = client.post(
+                "/api/v1/events",
+                json={
+                    "source": "wireless",
+                    "finding_type": f"offset_test_{index}",
+                    "severity": "low",
+                    "summary": f"Offset test event {index}",
+                },
+            )
+            assert response.status_code == 201
+
+        response = client.get(
+            "/api/v1/events",
+            params={"limit": 2, "offset": 10},
+        )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["items"] == []
+    assert data["total"] == 3
+    assert data["limit"] == 2
+    assert data["offset"] == 10
+    assert data["has_more"] is False
+
+
+def test_filtered_event_total_counts_only_matching_events(
+    tmp_path, monkeypatch
+):
+    test_db = tmp_path / "filtered_total_test.db"
+    monkeypatch.setattr(database, "DB_PATH", test_db)
+
+    with TestClient(main.app) as client:
+        events = [
+            {
+                "source": "wireless",
+                "finding_type": "wireless_high",
+                "severity": "high",
+                "summary": "Wireless high event",
+            },
+            {
+                "source": "wireless",
+                "finding_type": "wireless_low",
+                "severity": "low",
+                "summary": "Wireless low event",
+            },
+            {
+                "source": "android_api",
+                "finding_type": "android_high",
+                "severity": "high",
+                "summary": "Android high event",
+            },
+        ]
+
+        for event in events:
+            response = client.post("/api/v1/events", json=event)
+            assert response.status_code == 201
+
+        response = client.get(
+            "/api/v1/events",
+            params={
+                "source": "wireless",
+                "severity": "high",
+                "limit": 10,
+                "offset": 0,
+            },
+        )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["total"] == 1
+    assert len(data["items"]) == 1
+    assert data["items"][0]["finding_type"] == "wireless_high"
+    assert data["has_more"] is False
