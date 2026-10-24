@@ -34,6 +34,8 @@ Example:
 
 A successful request returns HTTP `201 Created` and the stored event, including its generated event ID and timestamp.
 
+The `event_id`, `timestamp`, `schema_version`, and `enforcement_result` fields have defaults when omitted. The backend generates the event ID and UTC timestamp; `schema_version` defaults to `1.0`, and `enforcement_result` defaults to `not_applicable`. Clients may supply these fields explicitly when appropriate.
+
 ## 4. Supported sources
 
 - `wireless`
