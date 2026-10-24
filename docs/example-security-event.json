@@ -1,0 +1,15 @@
+
+{
+  "event_id": "example-event-001",
+  "schema_version": "1.0",
+  "timestamp": "2026-10-24T12:00:00Z",
+  "source": "privacy_guard",
+  "finding_type": "sensitive_data_detected",
+  "severity": "high",
+  "asset_or_subject": "managed-ai-request-001",
+  "summary": "A test request contained sensitive information.",
+  "evidence_reference": "lab-evidence-privacy-001",
+  "rule_or_model_version": "privacy-rules-0.1",
+  "policy_decision": "redact",
+  "enforcement_result": "redacted"
+}
