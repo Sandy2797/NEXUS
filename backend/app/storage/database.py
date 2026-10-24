@@ -75,8 +75,10 @@ def get_event(event_id: str) -> SecurityEvent | None:
     return SecurityEvent.model_validate_json(row["event_json"])
 
 
+
 def list_events(
     limit: int = 100,
+    offset: int = 0,
     source: str | None = None,
     severity: str | None = None,
 ) -> list[SecurityEvent]:
@@ -95,8 +97,8 @@ def list_events(
         query += " AND severity = ?"
         parameters.append(severity)
 
-    query += " ORDER BY timestamp DESC LIMIT ?"
-    parameters.append(limit)
+    query += " ORDER BY timestamp DESC, event_id DESC LIMIT ? OFFSET ?"
+    parameters.extend([limit, offset])
 
     with get_connection() as connection:
         rows = connection.execute(query, parameters).fetchall()
@@ -105,3 +107,4 @@ def list_events(
         SecurityEvent.model_validate_json(row["event_json"])
         for row in rows
     ]
+

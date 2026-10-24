@@ -51,6 +51,7 @@ def create_event(event: SecurityEvent):
 @app.get("/api/v1/events", response_model=list[SecurityEvent])
 def get_events(
     limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     source: str | None = None,
     severity: str | None = None,
 ):
@@ -80,14 +81,13 @@ def get_events(
             detail=f"Invalid severity. Choose from: {sorted(valid_severities)}",
         )
 
-    
+
     return database.list_events(
         limit=limit,
+        offset=offset,
         source=source,
         severity=severity,
     )
-
-
 
 
 @app.get("/api/v1/events/{event_id}", response_model=SecurityEvent)
