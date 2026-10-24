@@ -105,6 +105,42 @@ Retrieve one event:
 
 `GET /api/v1/events/{event_id}`
 
+### Example paginated response
+
+The `GET /api/v1/events` endpoint returns an object containing the events and pagination metadata, rather than a plain JSON array.
+
+Example response:
+
+```json
+{
+  "items": [
+    {
+      "event_id": "example-event-id",
+      "source": "wireless",
+      "finding_type": "suspicious_access_point",
+      "severity": "high",
+      "summary": "A test finding from the authorized wireless lab."
+    }
+  ],
+  "total": 1,
+  "limit": 10,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+This is an illustrative, shortened example. Actual event records include the other fields defined by the event schema.
+
+Response fields:
+
+- `items`: the events returned on this page.
+- `total`: the total number of matching events before pagination.
+- `limit`: the maximum number of events requested.
+- `offset`: the number of matching events skipped.
+- `has_more`: whether additional matching events remain.
+
+When consuming the list endpoint, read the event records from `items`. The `GET /api/v1/events/{event_id}` endpoint still returns a single event object directly.
+
 ## Development and tests
 
 Run the automated tests:

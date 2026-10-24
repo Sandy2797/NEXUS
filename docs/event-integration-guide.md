@@ -59,17 +59,73 @@ Do not assume that a policy decision proves enforcement succeeded.
 
 ## 7. Query events
 
-List events:
+### List events
 
-`GET /api/v1/events?limit=10&offset=0`
+Use `GET /api/v1/events` to retrieve security events.
 
-Filter events:
+Example request:
 
-`GET /api/v1/events?source=wireless&severity=high&limit=10&offset=0`
+```http
+GET /api/v1/events?limit=10&offset=0
+```
 
-Retrieve a specific event:
+The endpoint supports pagination and optional filtering:
 
-`GET /api/v1/events/{event_id}`
+- `limit`: maximum number of events to return (default: `100`, maximum: `500`).
+- `offset`: number of matching events to skip (default: `0`).
+- `source`: optional source filter, such as `wireless`.
+- `severity`: optional severity filter, such as `high`.
+
+Example request with filters:
+
+```http
+GET /api/v1/events?source=wireless&severity=high&limit=10&offset=0
+```
+
+The response is a JSON object containing the event list and pagination metadata.
+
+Example response:
+
+```json
+{
+  "items": [
+    {
+      "event_id": "example-event-id",
+      "schema_version": "1.0",
+      "timestamp": "2026-10-24T12:00:00Z",
+      "source": "wireless",
+      "finding_type": "suspicious_access_point",
+      "severity": "high",
+      "asset_or_subject": null,
+      "summary": "A suspicious access point was observed in an authorized lab.",
+      "evidence_reference": null,
+      "rule_or_model_version": null,
+      "policy_decision": null,
+      "enforcement_result": "not_applicable"
+    }
+  ],
+  "total": 1,
+  "limit": 10,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+The example values are illustrative.
+
+Response fields:
+
+- `items`: events returned for the requested page.
+- `total`: total number of events matching the supplied filters, before pagination.
+- `limit`: maximum number of events requested.
+- `offset`: number of matching events skipped.
+- `has_more`: `true` when more matching events remain after the current page; otherwise `false`.
+
+When integrating with the API, read event records from `items`, not directly from the top-level response.
+
+### Retrieve a specific event
+
+Use `GET /api/v1/events/{event_id}` to retrieve one event by its ID. This endpoint returns the event object directly, rather than the paginated response format.
 
 ## 8. Error handling
 
