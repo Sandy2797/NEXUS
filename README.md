@@ -17,9 +17,30 @@ Activate the virtual environment in PowerShell:
 
 Install dependencies:
 
+
 ```powershell
 python -m pip install -r requirements.txt
 ```
+
+## Database Configuration
+
+The backend reads the database path from the `NEXUS_DB_PATH`
+environment variable. If the variable is not set, the database
+defaults to `nexus.db` in the project root.
+
+Relative paths are resolved from the project root. Absolute paths
+are used as provided.
+
+Example for PowerShell:
+
+```powershell
+$env:NEXUS_DB_PATH = "data/nexus.db"
+python -m uvicorn backend.app.main:app --reload
+```
+
+`.env.example` documents the available setting; it is a template
+and is not loaded automatically by the application.
+
 
 ## Run the API
 
