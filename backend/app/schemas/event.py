@@ -40,7 +40,7 @@ class SecurityEvent(BaseModel):
         min_length=1,
         max_length=100,
     )
-    schema_version: str = "1.0"
+    schema_version: Literal["1.0"] = "1.0"
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )

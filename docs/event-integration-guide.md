@@ -145,3 +145,77 @@ If submission fails, record the status code and safe diagnostic details. Avoid l
 - Do not include unnecessary sensitive data in event summaries.
 - Test integrations against the local development API before shared demonstrations.
 - The current setup is for development; production authentication and deployment hardening remain separate tasks.
+
+## 10. Module integration responsibilities
+
+All modules must use the shared `SecurityEvent` contract documented in `docs/event-contract.md`. The backend API is the common ingestion and retrieval interface.
+
+### Wireless module — Seif
+
+- Submit normalized wireless findings using `source: "wireless"`.
+- Use a meaningful `finding_type` and an allowed severity.
+- Use synthetic or authorized lab data for development and demonstrations.
+- Keep evidence in the appropriate evidence store and provide an `evidence_reference` when available; do not put unnecessary raw capture data in the event summary.
+
+### Android/API policy module — Mohamed
+
+- Submit relevant findings using `source: "android_api"`.
+- Set `policy_decision` when a policy outcome has been determined.
+- Set `enforcement_result` to the observed result, not merely the intended action.
+- Keep policy decisions and enforcement outcomes distinct.
+
+### Privacy module — Nada
+
+- Submit privacy findings using `source: "privacy_guard"`.
+- Use concise summaries and evidence references rather than raw sensitive input.
+- Do not include credentials, tokens, or unnecessary personal or confidential data in event summaries.
+- Confirm the privacy module's redaction and evidence-handling behavior with the team before integration.
+
+### Dashboard — Rana
+
+- Retrieve events through `GET /api/v1/events`.
+- Read records from the response's `items` array and use `total`, `limit`, `offset`, and `has_more` for pagination.
+- Handle loading, empty results, and API errors explicitly.
+- Treat event fields as potentially absent or `null` where the contract permits this.
+- Do not assume that a policy decision means enforcement succeeded.
+
+### Backend and integration — Sandy
+
+- Maintain the shared event model, API validation, persistence, and integration documentation.
+- Validate incoming events against the agreed contract.
+- Coordinate contract changes with the other module owners before changing field names, allowed values, or endpoint behavior.
+
+## 11. Dashboard response expectations
+
+For `GET /api/v1/events`, the dashboard should expect this response structure:
+
+- `items`: array of event objects.
+- `total`: number of matching events before pagination.
+- `limit`: requested page size.
+- `offset`: number of matching records skipped.
+- `has_more`: whether additional matching events remain.
+
+The dashboard should provide clear states for:
+
+1. **Loading:** the request is in progress.
+2. **Populated:** one or more events are available.
+3. **Empty:** the request succeeded but no events match.
+4. **Error:** the request failed; display a useful message without exposing sensitive backend details.
+
+These are client-side integration expectations, not additional backend endpoints.
+
+## 12. Integration acceptance checklist
+
+Before a shared demonstration, verify that:
+
+- [ ] Each module owner can produce an event using an agreed source and finding type.
+- [ ] A valid event can be submitted to `POST /api/v1/events`.
+- [ ] The created event can be retrieved by its `event_id`.
+- [ ] The dashboard can parse the list response and its pagination metadata.
+- [ ] The dashboard handles loading, empty, and error states.
+- [ ] Invalid event values are rejected by the API.
+- [ ] Synthetic examples are used for the demonstration.
+- [ ] No unnecessary raw sensitive data or credentials are included in event summaries.
+- [ ] Any unresolved contract decisions are documented and assigned to the relevant owner.
+
+Passing these checks demonstrates basic integration readiness; it does not establish production readiness or prove that all privacy and security controls are implemented.
