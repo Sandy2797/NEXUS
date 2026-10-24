@@ -162,3 +162,54 @@ def test_event_limit_is_respected(tmp_path, monkeypatch):
 
     assert response.status_code == 200
     assert len(response.json()) == 1
+
+
+def test_event_pagination_returns_different_pages(tmp_path, monkeypatch):
+    test_db = tmp_path / "pagination_test.db"
+    monkeypatch.setattr(database, "DB_PATH", test_db)
+
+    with TestClient(main.app) as client:
+        for index in range(5):
+            response = client.post(
+                "/api/v1/events",
+                json={
+                    "source": "wireless",
+                    "finding_type": f"pagination_test_{index}",
+                    "severity": "low",
+                    "summary": f"Pagination event {index}",
+                },
+            )
+            assert response.status_code == 201
+
+        first_response = client.get(
+            "/api/v1/events",
+            params={"limit": 2, "offset": 0},
+        )
+        second_response = client.get(
+            "/api/v1/events",
+            params={"limit": 2, "offset": 2},
+        )
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+
+    first_page = first_response.json()
+    second_page = second_response.json()
+
+    assert len(first_page) == 2
+    assert len(second_page) == 2
+
+    first_ids = {event["event_id"] for event in first_page}
+    second_ids = {event["event_id"] for event in second_page}
+
+    assert first_ids.isdisjoint(second_ids)
+
+
+def test_negative_offset_is_rejected():
+    with TestClient(main.app) as client:
+        response = client.get(
+            "/api/v1/events",
+            params={"offset": -1},
+        )
+
+    assert response.status_code == 422
