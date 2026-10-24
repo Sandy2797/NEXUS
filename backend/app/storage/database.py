@@ -75,17 +75,31 @@ def get_event(event_id: str) -> SecurityEvent | None:
     return SecurityEvent.model_validate_json(row["event_json"])
 
 
-def list_events(limit: int = 100) -> list[SecurityEvent]:
+def list_events(
+    limit: int = 100,
+    source: str | None = None,
+    severity: str | None = None,
+) -> list[SecurityEvent]:
+    query = """
+        SELECT event_json
+        FROM security_events
+        WHERE 1 = 1
+    """
+    parameters: list[str | int] = []
+
+    if source is not None:
+        query += " AND source = ?"
+        parameters.append(source)
+
+    if severity is not None:
+        query += " AND severity = ?"
+        parameters.append(severity)
+
+    query += " ORDER BY timestamp DESC LIMIT ?"
+    parameters.append(limit)
+
     with get_connection() as connection:
-        rows = connection.execute(
-            """
-            SELECT event_json
-            FROM security_events
-            ORDER BY timestamp DESC
-            LIMIT ?
-            """,
-            (limit,),
-        ).fetchall()
+        rows = connection.execute(query, parameters).fetchall()
 
     return [
         SecurityEvent.model_validate_json(row["event_json"])

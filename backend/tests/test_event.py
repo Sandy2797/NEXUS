@@ -136,3 +136,29 @@ def test_invalid_source_filter_is_rejected():
         )
 
     assert response.status_code == 422
+
+
+def test_event_limit_is_respected(tmp_path, monkeypatch):
+    test_db = tmp_path / "limit_test.db"
+    monkeypatch.setattr(database, "DB_PATH", test_db)
+
+    with TestClient(main.app) as client:
+        for index in range(3):
+            response = client.post(
+                "/api/v1/events",
+                json={
+                    "source": "wireless",
+                    "finding_type": f"test_event_{index}",
+                    "severity": "low",
+                    "summary": f"Test event number {index}",
+                },
+            )
+            assert response.status_code == 201
+
+        response = client.get(
+            "/api/v1/events",
+            params={"limit": 1},
+        )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1

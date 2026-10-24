@@ -80,17 +80,13 @@ def get_events(
             detail=f"Invalid severity. Choose from: {sorted(valid_severities)}",
         )
 
-    events = database.list_events(limit=500)
+    
+    return database.list_events(
+        limit=limit,
+        source=source,
+        severity=severity,
+    )
 
-    if source is not None:
-        events = [event for event in events if event.source == source]
-
-    if severity is not None:
-        events = [
-            event for event in events if event.severity == severity
-        ]
-
-    return events[:limit]
 
 
 
